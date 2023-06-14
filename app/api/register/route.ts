@@ -21,7 +21,8 @@ const user = await prisma.user.create({
 });
 
 return NextResponse.json(user);
-    }catch(error:any)
+    }
+    catch(error:any)
     {
        console.log(error,'REGISTERATION ERROR')
        return new NextResponse('Internal Error', {status:500});
