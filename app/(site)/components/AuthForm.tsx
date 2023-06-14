@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { SubmitHandler, FieldValues, useForm } from "react-hook-form";
 import Input from "@/app/components/Input/Input";
 import Button from "@/app/components/Button";
@@ -8,14 +8,23 @@ import AuthSocialButton from "./AuthSocialButton";
 import {BsGithub, BsGoogle} from 'react-icons/bs';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { signIn } from 'next-auth/react'
+import { signIn, useSession } from 'next-auth/react'
+import { useRouter } from "next/navigation";
 
 type Variant = 'Login' | 'Register'
 
 const AuthForm = () =>{
     const [variant, setVariant] = useState<Variant>('Login');
     const [isLoading, setIsLoading] = useState(false);
+    const session = useSession();
+    const router = useRouter();
 
+    useEffect(()=>{
+        if(session?.status==='authenticated')
+        {
+            router.push('/users');
+        }
+    },[session?.status, router])
     const toggleVariant = useCallback(()=>{
 
         if(variant === 'Login')
@@ -44,12 +53,15 @@ const AuthForm = () =>{
 
     })
 
+    
+
     const onSubmit: SubmitHandler<FieldValues> = (data) =>{
         setIsLoading(true);
 
         if(variant==='Register')
         {
             axios.post('/api/register', data)
+            .then(()=> signIn('credentials',data))
             .catch(()=> toast.error('Something went wrong') )
             .finally(()=>setIsLoading(false))
         }
@@ -68,6 +80,8 @@ const AuthForm = () =>{
                 if(callback?.ok&&!callback?.error)
                 {
                     toast.success('Successfully logged in')
+                    router.push('/users');
+
                 }
             })
              .finally(()=>setIsLoading(false));
@@ -79,9 +93,7 @@ const AuthForm = () =>{
         setIsLoading(true);
 
         //Social Sign In
-        signIn(action,{
-            redirect:false
-        })
+        signIn(action,{redirect:false})
         .then((callback)=>{
             if(callback?.error)
             {
